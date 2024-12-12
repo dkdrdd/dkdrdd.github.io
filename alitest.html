@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>配送状況</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f9f9f9;
+        }
+        h1 {
+            color: #333;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background-color: #fff;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f0f0f0;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+    <h1>配送状況</h1>
+    <table>
+        <thead>
+            <tr id="header-row">
+                <!-- ヘッダーは動的に生成されます -->
+            </tr>
+        </thead>
+        <tbody id="tracking-info">
+            <!-- データはここに動的に挿入されます -->
+        </tbody>
+    </table>
+
+    <script>
+        async function fetchTrackingInfo() {
+            try {
+                const response = await fetch('https://www.console.espoirer.com/prod/other/status', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ data: { hawbNoList: ["E10021553636"] } })
+                });
+
+                if (!response.ok) {
+                    console.error('Error fetching tracking info:', response.statusText);
+                    return;
+                }
+
+                const responseData = await response.json();
+                updateTable(responseData);
+            } catch (error) {
+                console.error('Fetch error:', error);
+            }
+        }
+
+        function updateTable(data) {
+            const tableBody = document.getElementById('tracking-info');
+            const headerRow = document.getElementById('header-row');
+            tableBody.innerHTML = ''; // 既存の内容をクリア
+            headerRow.innerHTML = ''; // 既存のヘッダーをクリア
+
+            if (data.result.length > 0) {
+                // ヘッダーを動的に生成
+                const firstItem = data.result[0];
+                Object.keys(firstItem).forEach(key => {
+                    const th = document.createElement('th');
+                    th.textContent = key;
+                    headerRow.appendChild(th);
+                });
+
+                // データをテーブルに挿入
+                data.result.forEach(item => {
+                    const row = document.createElement('tr');
+
+                    Object.values(item).forEach(value => {
+                        const td = document.createElement('td');
+                        td.textContent = value !== null ? value : '';
+                        row.appendChild(td);
+                    });
+
+                    tableBody.appendChild(row);
+                });
+            }
+        }
+
+        // 定期的に配送情報を取得
+        setInterval(fetchTrackingInfo, 10000); // 10秒ごとに更新
+
+        // 初回取得
+        fetchTrackingInfo();
+    </script>
+</body>
+</html>
